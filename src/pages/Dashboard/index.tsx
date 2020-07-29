@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useState, FormEvent} from 'react'
 
 import { FiChevronRight } from 'react-icons/fi';
 
@@ -9,8 +9,39 @@ import api from '../../services/api';
 
 import logoImg from '../../assets/github_logo.svg';
 
+interface Repository {
+    description: string;
+    full_name: string;
+
+    owner: {
+        login: string;
+        avatar_url: string;
+    }
+}
+
 const Dashboard: React.FC = () => {
-    const [repositories, setRepositories] = useState([]);
+    const [newRepo, setNewRepo] = useState('');
+
+    const [repositories, setRepositories] = useState<Repository[]>([]);
+
+    async function handleAddRepository(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        //Adição de um novo repositório
+        //Consumir api do github
+        //salvar novo repositório no estado de repositórios 
+
+        const response = await api.get<Repository>(`/repos/${newRepo}`);
+        console.log(response);
+        
+        const repository = response.data;
+
+        //const {description, full_name, } = repository;
+
+        // const { avatar_url } = repository.owner;
+
+        setRepositories([...repositories, repository]);
+        setNewRepo('');
+    }
 
 
 
@@ -19,30 +50,35 @@ const Dashboard: React.FC = () => {
         <img src={logoImg} alt='Github Explorer' />
         <Title>Explore repositórios no Github</Title>
 
-        <Form action=''>
-            <input placeholder='Digite o nome do repositório' type="text"/>
+        <Form onSubmit={handleAddRepository}>
+            <input 
+            value={newRepo} 
+            onChange={ (e) => setNewRepo(e.target.value)}
+            placeholder='Digite o nome do repositório' 
+            type="text"/>
             <button type='submit'>Pesquisar</button>
         </Form>
 
         <Repositories>
-            <a href="teste">
+            {repositories.map(repository => (
+                <a key={repository.full_name} href="teste">
                 <div>
                     <img 
-                    src="https://avatars3.githubusercontent.com/u/62850277?s=460&u=b155be1023d30a02348168792c4e3230e50175da&v=4" 
-                    alt="Henrique Pires"
+                    src={repository.owner.avatar_url} 
+                    alt={repository.owner.login}
                     />
                 </div>
                 <div>
                     <strong>
-                        henriquepe/balance-transactions-project
+                        {repository.full_name}
                     </strong>
                     <p>
-                        Desafio nodeJS aplicando conceitos de repositories, services 
-                        and models. Transações financeiras.
+                        {repository.description}
                     </p>
                 </div>
                 <FiChevronRight size={20}  />
             </a>
+            ))}
 
         </Repositories>
         </>

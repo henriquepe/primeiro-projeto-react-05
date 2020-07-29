@@ -59,6 +59,11 @@ export const Repositories = styled.div`
 
     a {
 
+        div + div {
+            flex: 1;
+
+        }
+
         & + a {
         margin-top: 16px;
         }
@@ -66,7 +71,7 @@ export const Repositories = styled.div`
         background: #fff;
         border-radius: 5px;
         width: 100%;
-        padding: 24px;
+        padding: 24px 24px 24px 0px;
         text-decoration: none;
         display: flex;
         align-items: center;  

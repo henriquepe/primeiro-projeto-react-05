@@ -1,8 +1,9 @@
-import React, {useState, FormEvent} from 'react'
+import React, {useState, FormEvent, useEffect} from 'react'
 
 import { FiChevronRight } from 'react-icons/fi';
+import {Link} from 'react-router-dom';
 
-import {Title, Form, Repositories} from './style';
+import {Title, Form, Repositories, Error} from './style';
 
 import api from '../../services/api';
 
@@ -21,26 +22,52 @@ interface Repository {
 
 const Dashboard: React.FC = () => {
     const [newRepo, setNewRepo] = useState('');
+    const [inputError, setInputError] = useState('');
+    const [repositories, setRepositories] = useState<Repository[]>(() => {
+        const storagedRepositories = localStorage.getItem('@GithubExplorer: repositories');
 
-    const [repositories, setRepositories] = useState<Repository[]>([]);
+        if(storagedRepositories){
+            return JSON.parse(storagedRepositories);
+        }
+        else {
+            return [];
+        }
+    });
+
+
+
+    useEffect(() => {
+        localStorage.setItem('@GithubExplorer: repositories', JSON.stringify(repositories))
+    }, [repositories]);
 
     async function handleAddRepository(event: FormEvent<HTMLFormElement>) {
+       
         event.preventDefault();
         //Adição de um novo repositório
         //Consumir api do github
         //salvar novo repositório no estado de repositórios 
+       
+        if(!newRepo) {
+            setInputError('Digite autor/nomedorepositório');
+            return;
+        }
 
-        const response = await api.get<Repository>(`/repos/${newRepo}`);
-        console.log(response);
+
+        try {
+            const response = await api.get<Repository>(`/repos/${newRepo}`);
+            console.log(response);
         
-        const repository = response.data;
+            const repository = response.data;
 
-        //const {description, full_name, } = repository;
+            setRepositories([...repositories, repository]);
+            setNewRepo('');
+            setInputError('');
+        }
+        catch(err){
+            setInputError('Erro na busca pelo repositório')
+        }
 
-        // const { avatar_url } = repository.owner;
-
-        setRepositories([...repositories, repository]);
-        setNewRepo('');
+        
     }
 
 
@@ -50,7 +77,7 @@ const Dashboard: React.FC = () => {
         <img src={logoImg} alt='Github Explorer' />
         <Title>Explore repositórios no Github</Title>
 
-        <Form onSubmit={handleAddRepository}>
+        <Form hasError={!!inputError} onSubmit={handleAddRepository}>
             <input 
             value={newRepo} 
             onChange={ (e) => setNewRepo(e.target.value)}
@@ -58,26 +85,28 @@ const Dashboard: React.FC = () => {
             type="text"/>
             <button type='submit'>Pesquisar</button>
         </Form>
+        { inputError && <Error>{inputError}</Error> }
+        
 
         <Repositories>
             {repositories.map(repository => (
-                <a key={repository.full_name} href="teste">
-                <div>
-                    <img 
-                    src={repository.owner.avatar_url} 
-                    alt={repository.owner.login}
-                    />
-                </div>
-                <div>
-                    <strong>
-                        {repository.full_name}
-                    </strong>
-                    <p>
-                        {repository.description}
-                    </p>
-                </div>
-                <FiChevronRight size={20}  />
-            </a>
+                <Link to={`/repository/${repository.full_name}`} key={repository.full_name} href="teste">
+                    <div>
+                        <img 
+                        src={repository.owner.avatar_url} 
+                        alt={repository.owner.login}
+                        />
+                    </div>
+                    <div>
+                        <strong>
+                            {repository.full_name}
+                        </strong>
+                        <p>
+                            {repository.description}
+                        </p>
+                    </div>
+                    <FiChevronRight size={20}  />
+                </Link>
             ))}
 
         </Repositories>
